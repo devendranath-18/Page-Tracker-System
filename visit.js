@@ -1,6 +1,5 @@
 const { DataTypes } = require("sequelize");
-const sequelize = require("../config/db.js"); 
-
+const sequelize = require("../config/db");
 const Visit = sequelize.define("Visit", {
   ipAddress: {
     type: DataTypes.STRING,
@@ -19,5 +18,4 @@ const Visit = sequelize.define("Visit", {
     defaultValue: DataTypes.NOW,
   },
 });
-
 module.exports = Visit;
