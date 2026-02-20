@@ -1,75 +1,78 @@
 "use client";
-
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import axios from "axios";
-
-import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
-
-export default function ContactPage() {
-  const [form, setForm] = useState({
-    name: "",
-    email: "",
+export default function Contact() {
+  const [msg, setMsg] = useState("");
+  const [snackbar, setSnackbar] = useState<{
+    show: boolean;
+    message: string;
+    type: "success" | "error";
+  }>({
+    show: false,
     message: "",
+    type: "success",
   });
-
-
- useEffect(() => {
-    axios.post("http://localhost:5000/api/visits", {
-      page: "/contact",
-    });
+  useEffect(() => {
+    axios.post(
+      "http://localhost:5000/api/visit/track",
+      { page: "/contact" }
+    );
   }, []);
+  const sendMessage = () => {
+    if (!msg.trim()) {
+      setSnackbar({
+        show: true,
+        message: "Message cannot be empty ",
+        type: "error",
+      });
+    } else {
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    alert("Message sent successfully ");
+      setSnackbar({
+        show: true,
+        message: "Message Sent Successfully ",
+        type: "success",
+      });
+
+      setMsg("");
+    }
+    setTimeout(() => {
+      setSnackbar((prev) => ({ ...prev, show: false }));
+    }, 3000);
   };
-
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 p-6">
-      <Card className="w-full max-w-lg shadow-xl rounded-2xl">
-        <CardContent className="p-6 space-y-4">
-          <h2 className="text-2xl font-bold text-center">
-            Contact Us
-          </h2>
-
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <Input
-              placeholder="Your Name"
-              value={form.name}
-              onChange={(e) =>
-                setForm({ ...form, name: e.target.value })
-              }
-              required
-            />
-
-            <Input
-              type="email"
-              placeholder="Your Email"
-              value={form.email}
-              onChange={(e) =>
-                setForm({ ...form, email: e.target.value })
-              }
-              required
-            />
-
-            <Textarea
-              placeholder="Your Message"
-              value={form.message}
-              onChange={(e) =>
-                setForm({ ...form, message: e.target.value })
-              }
-              required
-            />
-
-            <Button className="w-full">
-              Send Message
-            </Button>
-          </form>
-        </CardContent>
-      </Card>
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-white-100 to-green-200">  
+      <div className="bg-white p-10 rounded-2xl shadow-2xl w-[500px]">
+        <h1 className="text-3xl font-bold text-center text-green-600 mb-6">
+          Contact Us
+        </h1>
+        <p className="text-gray-500 text-center mb-6">
+          Have questions or feedback? Send us a message 
+        </p>
+        <textarea
+          value={msg}
+          onChange={(e) => setMsg(e.target.value)}
+          placeholder="Type your message here..."
+          className="w-full border p-4 rounded-lg h-32 resize-none focus:outline-none focus:ring-2 focus:ring-green-400 mb-6"
+        />
+        <button
+          onClick={sendMessage}
+          className="w-full bg-green-600 text-white p-3 rounded-lg font-semibold hover:bg-green-700 transition"
+        >
+          Send Message 
+        </button>
+      </div>
+      {snackbar.show && (
+        <div
+          className={`fixed bottom-6 right-6 px-6 py-3 rounded-lg shadow-xl text-white
+          ${
+            snackbar.type === "success"
+              ? "bg-green-600"
+              : "bg-red-600"
+          }`}
+        >
+          {snackbar.message}
+        </div>
+      )}
     </div>
   );
 }
