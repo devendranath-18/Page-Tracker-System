@@ -1,0 +1,244 @@
+"use client";
+import { useEffect, useState } from "react";
+import axios from "axios";
+import { useRouter } from "next/navigation";
+export default function AnalyticsPage() {
+  const router = useRouter();
+  const [loading, setLoading] = useState(true); 
+  const [data, setData] = useState<any[]>([]);
+  const [filteredData, setFilteredData] =
+    useState<any[]>([]);
+  const [search, setSearch] = useState("");
+  const [fromDate, setFromDate] = useState("");
+  const [toDate, setToDate] = useState("");
+  const [sortOrder, setSortOrder] = useState<
+    "asc" | "desc"
+  >("desc");
+  const [snackbar, setSnackbar] = useState<{
+    show: boolean;
+    message: string;
+    type: "success" | "error";
+  }>({
+    show: false,
+    message: "",
+    type: "success",
+  });
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const token = localStorage.getItem("token")
+    if (!token) {
+      router.replace("/page1");
+      return;
+    }
+    axios
+      .get("http://localhost:5000/api/visits", {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+      .then((res) => {
+        setData(res.data);
+        setFilteredData(res.data);
+        setSnackbar({
+          show: true,
+          message: "Analytics Loaded ",
+          type: "success",
+        });
+        setLoading(false); 
+        setTimeout(() => {
+          setSnackbar((prev) => ({
+            ...prev,
+            show: false,
+          }));
+        }, 3000);
+      })
+      .catch(() => {
+        router.replace("/page1");
+      });
+  }, [router]);
+  useEffect(() => {
+    let filtered = [...data];
+    if (search) {
+      filtered = filtered.filter(
+        (item) =>
+          item.ipAddress
+            ?.toLowerCase()
+            .includes(search.toLowerCase()) ||
+          item.page
+            ?.toLowerCase()
+            .includes(search.toLowerCase())
+      );
+    }
+    if (fromDate) {
+      filtered = filtered.filter(
+        (item) =>
+          new Date(item.lastVisitedAt) >=
+          new Date(fromDate)
+      );
+    }
+    if (toDate) {
+      const end = new Date(toDate);
+      end.setHours(23, 59, 59);
+
+      filtered = filtered.filter(
+        (item) =>
+          new Date(item.lastVisitedAt) <= end
+      );
+    }
+    filtered.sort((a, b) =>
+      sortOrder === "asc"
+        ? a.count - b.count
+        : b.count - a.count
+    );
+    setFilteredData(filtered);
+  }, [
+    search,
+    fromDate,
+    toDate,
+    data,
+    sortOrder,
+  ]);
+  if (loading) {
+    return (
+      <div className="h-screen flex items-center justify-center text-xl font-semibold">
+        Checking Authentication...
+      </div>
+    );
+  }
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-white-100 to-green-200 p-10">
+      <div className="bg-white p-6 rounded-2xl shadow-xl mb-8 text-center">
+        <h1 className="text-3xl font-bold text-green-600">
+          Analytics Dashboard 
+        </h1>
+        <p className="text-gray-500 mt-2">
+          Monitor page visits, IP tracking & usage insights
+        </p>
+      </div>
+      <div className="bg-white p-6 rounded-2xl shadow-xl mb-6 flex flex-wrap gap-4 items-center justify-between">
+        <input
+          type="text"
+          placeholder="Search IP or Page..."
+          value={search}
+          onChange={(e) =>
+            setSearch(e.target.value)
+          }
+          className="border p-2 rounded-lg w-64 shadow-sm"
+        />
+        <div>
+          <label className="text-sm text-gray-500 mr-2">
+            From:
+          </label>
+          <input
+            type="datetime-local"
+            value={fromDate}
+            onChange={(e) =>
+              setFromDate(e.target.value)
+            }
+            className="border p-2 rounded-lg"
+          />
+        </div>
+        <div>
+          <label className="text-sm text-gray-500 mr-2">
+            To:
+          </label>
+          <input
+            type="datetime-local"
+            value={toDate}
+            onChange={(e) =>
+              setToDate(e.target.value)
+            }
+            className="border p-2 rounded-lg"
+          />
+        </div>
+        <button
+          onClick={() =>
+            setSortOrder(
+              sortOrder === "asc"
+                ? "desc"
+                : "asc"
+            )
+          }
+          className="bg-green-600 text-white px-4 py-2 rounded-lg shadow"
+        >
+          Sort Visits:{" "}
+          {sortOrder === "asc"
+            ? "Low → High"
+            : "High → Low"}
+        </button>
+
+        <button
+          onClick={() => {
+            setSearch("");
+            setFromDate("");
+            setToDate("");
+            setSortOrder("desc");
+            setFilteredData(data);
+          }}
+          className="bg-green-600 text-white px-4 py-2 rounded-lg shadow"
+        >
+          Reset
+        </button>
+      </div>
+      <div className="bg-white p-6 rounded-2xl shadow-2xl overflow-x-auto">
+        <table className="w-full border-collapse">
+          <thead>
+            <tr className="bg-green-600 text-white">
+              <th className="p-3">IP Address</th>
+              <th className="p-3">Page</th>
+              <th className="p-3">Visit Count ↕</th>
+              <th className="p-3">Last Visit</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {filteredData.length > 0 ? (
+              filteredData.map((v, i) => (
+                <tr
+                  key={i}
+                  className="text-center border-b hover:bg-gray-100"
+                >
+                  <td className="p-3">
+                    {v.ipAddress}
+                  </td>
+                  <td className="p-3">
+                    {v.page}
+                  </td>
+                  <td className="p-3 font-semibold">
+                    {v.count}
+                  </td>
+                  <td className="p-3">
+                    {new Date(
+                      v.lastVisitedAt
+                    ).toLocaleString()}
+                  </td>
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td
+                  colSpan={4}
+                  className="p-6 text-gray-500 text-center"
+                >
+                  No Data Found
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+      {snackbar.show && (
+        <div
+          className={`fixed bottom-6 right-6 px-6 py-3 rounded-lg shadow-xl text-white
+          ${
+            snackbar.type === "success"
+              ? "bg-green-600"
+              : "bg-red-600"
+          }`}
+        >
+          {snackbar.message}
+        </div>
+      )}
+    </div>
+  );
+}
