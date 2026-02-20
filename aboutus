@@ -1,0 +1,51 @@
+"use client";
+import { useEffect, useState } from "react";
+import axios from "axios";
+export default function About() {
+  const [snackbar, setSnackbar] = useState<{
+    show: boolean;
+    message: string;
+  }>({
+    show: false,
+    message: "",
+  });
+  useEffect(() => {
+    axios.post(
+      "http://localhost:5000/api/visit/track",
+      { page: "/about" }
+    );
+    setSnackbar({
+      show: true,
+      message: "About Page Visited ",
+    });
+    setTimeout(() => {
+      setSnackbar({
+        show: false,
+        message: "",
+      });
+    }, 3000);
+  }, []);
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-white-100 to-green-200">
+
+      <div className="bg-white p-10 rounded-2xl shadow-2xl w-[500px] text-center">
+
+        <h1 className="text-3xl font-bold text-green-600 mb-6">
+          About Us
+        </h1>
+        <p className="text-gray-600 leading-relaxed">
+          This system tracks page visits, IP address,
+          visit count, and provides a powerful analytics
+          dashboard to monitor user activity in real-time.
+          It helps administrators understand traffic flow,
+          engagement levels, and system usage patterns .
+        </p>
+      </div>
+      {snackbar.show && (
+        <div className="fixed bottom-6 right-6 bg-black text-white px-6 py-3 rounded-lg shadow-xl">
+          {snackbar.message}
+        </div>
+      )}
+    </div>
+  );
+}
